@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>NexTalk</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090f; --s1:#0f1018; --s2:#161822; --s3:#1d2030; --s4:#232640;
+  --bd:#2a2d4a; --bd2:#363960;
+  --blue:#5b8dee; --blue2:#3d6fcc; --blueglow:rgba(91,141,238,.14);
+  --green:#3ecf8e; --red:#f05c5c; --amber:#f0a832; --purple:#9b6dff;
+  --tx:#e4e6f0; --t2:#8b90b8; --t3:#4a4f72;
+  --r:12px; --rs:8px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:'Instrument Sans',sans-serif;font-size:14px;color:var(--tx)}
+::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px} ::-webkit-scrollbar-track{background:transparent}
+
+/* ── PAGES ── */
+.page{display:none;height:100vh}
+.page.active{display:flex}
+#pg-auth{align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden}
+#pg-auth::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -5%,rgba(91,141,238,.1),transparent);pointer-events:none}
+#pg-chat{flex-direction:row}
+#pg-verify{align-items:center;justify-content:center;background:var(--bg)}
+
+/* ── AUTH CARD ── */
+.auth-box{width:100%;max-width:420px;padding:16px;position:relative;z-index:1}
+.auth-card{background:var(--s1);border:1px solid var(--bd);border-radius:20px;padding:38px 34px;box-shadow:0 40px 100px rgba(0,0,0,.5);animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.auth-logo{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:4px}
+.auth-logo span{color:var(--blue)}
+.auth-tagline{color:var(--t2);font-size:13px;margin-bottom:26px}
+
+/* Tabs */
+.tabs{display:flex;background:var(--s2);border-radius:var(--rs);padding:3px;margin-bottom:24px}
+.tab{flex:1;padding:8px;border:none;background:none;cursor:pointer;border-radius:6px;font-family:inherit;font-size:13px;color:var(--t2);font-weight:500;transition:.15s}
+.tab.on{background:var(--s3);color:var(--tx);font-weight:600}
+
+/* Form */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.fi{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 13px;color:var(--tx);font-family:inherit;font-size:14px;outline:none;transition:.2s}
+.fi:focus{border-color:var(--blue)} .fi::placeholder{color:var(--t3)} .fi:disabled{opacity:.4;cursor:not-allowed}
+.fe{font-size:11px;color:var(--red);margin-top:4px}
+.fhint{font-size:11px;color:var(--t3);margin-top:4px}
+.pw-wrap{position:relative}
+.pw-wrap .fi{padding-right:40px}
+.pw-eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--t3);padding:2px;transition:.15s}
+.pw-eye:hover{color:var(--t2)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:var(--rs);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:.15s}
+.btn-primary{background:var(--blue);color:#fff} .btn-primary:hover{background:var(--blue2)}
+.btn-secondary{background:var(--s3);color:var(--tx);border:1px solid var(--bd)} .btn-secondary:hover{background:var(--s4);border-color:var(--bd2)}
+.btn-danger{background:var(--red);color:#fff} .btn-danger:hover{filter:brightness(.9)}
+.btn-success{background:var(--green);color:#fff} .btn-success:hover{filter:brightness(.9)}
+.btn-ghost{background:none;color:var(--t2);border:1px solid var(--bd)} .btn-ghost:hover{color:var(--tx);background:var(--s3)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-full{width:100%;padding:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* Divider */
+.divider{display:flex;align-items:center;gap:10px;color:var(--t3);font-size:12px;margin:16px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* Verify pending banner */
+.verify-banner{background:rgba(240,168,50,.08);border:1px solid rgba(240,168,50,.25);border-radius:var(--rs);padding:14px 16px;margin-bottom:18px}
+.verify-banner h4{font-size:14px;font-weight:600;color:var(--amber);margin-bottom:5px}
+.verify-banner p{font-size:12.5px;color:var(--t2);line-height:1.5}
+.verify-banner .link{font-size:12px;color:var(--blue);word-break:break-all;margin-top:8px;display:block;cursor:pointer;text-decoration:underline}
+
+/* ── CHAT APP ── */
+.sidebar{width:268px;min-width:268px;background:var(--s1);border-right:1px solid var(--bd);display:flex;flex-direction:column}
+.sb-head{padding:15px 13px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bd)}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}.logo span{color:var(--blue)}
+.sb-actions{margin-left:auto;display:flex;gap:2px}
+.ic{background:none;border:none;cursor:pointer;color:var(--t2);padding:6px;border-radius:var(--rs);transition:.15s;display:flex;align-items:center;justify-content:center}
+.ic:hover{background:var(--s3);color:var(--tx)} .ic.red:hover{background:rgba(240,92,92,.1);color:var(--red)}
+.sb-search{padding:9px 11px}
+.sbox{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:8px 10px 8px 30px;color:var(--tx);font-family:inherit;font-size:13px;outline:none;transition:.2s;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%234a4f72' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:9px center}
+.sbox:focus{border-color:var(--blue)} .sbox::placeholder{color:var(--t3)}
+.sec{padding:4px 13px;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--t3);text-transform:uppercase}
+.cl{flex:1;overflow-y:auto}
+.ci{display:flex;align-items:center;gap:10px;padding:9px 11px;cursor:pointer;transition:.12s;position:relative}
+.ci:hover{background:var(--s2)} .ci.on{background:var(--s2)}
+.ci.on::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:var(--blue);border-radius:0 3px 3px 0}
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;position:relative;font-family:'Syne',sans-serif}
+.av.sm{width:30px;height:30px;font-size:11px} .av.md{width:44px;height:44px;font-size:16px} .av.lg{width:54px;height:54px;font-size:20px} .av.xl{width:76px;height:76px;font-size:26px}
+.od{position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--s1)}
+.ci-info{flex:1;min-width:0}
+.ci-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-last{font-size:11.5px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-meta{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.ci-time{font-size:10px;color:var(--t3)}
+.unread{background:var(--blue);color:#fff;font-size:10px;font-weight:700;min-width:17px;height:17px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.sb-foot{border-top:1px solid var(--bd);padding:10px 11px;display:flex;align-items:center;gap:9px}
+.sb-foot-name{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-foot-status{font-size:11px;color:var(--green)}
+
+/* CHAT MAIN */
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+.ch-head{padding:12px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;background:var(--s1)}
+.ch-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px}
+.ch-status{font-size:11.5px;color:var(--t2)} .ch-status.on{color:var(--green)}
+.msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:2px}
+.dsep{text-align:center;margin:12px 0 8px;font-size:11px;color:var(--t3);display:flex;align-items:center;gap:10px}
+.dsep::before,.dsep::after{content:'';flex:1;height:1px;background:var(--bd)}
+.mgrp{display:flex;flex-direction:column;gap:1px;margin-bottom:8px}
+.mgrp.mine{align-items:flex-end} .mgrp.theirs{align-items:flex-start}
+.msender{font-size:10.5px;color:var(--t3);margin-bottom:3px;padding:0 2px}
+.mrow{display:flex;align-items:flex-end;gap:6px;max-width:72%;animation:msgIn .18s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.mgrp.mine .mrow{flex-direction:row-reverse;align-self:flex-end}
+.bbl{padding:8px 13px;border-radius:16px;font-size:13.5px;line-height:1.5;word-break:break-word;cursor:pointer}
+.mgrp.mine .bbl{background:var(--blue);color:#fff;border-bottom-right-radius:3px}
+.mgrp.theirs .bbl{background:var(--s3);color:var(--tx);border-bottom-left-radius:3px}
+.bbl.del{opacity:.45;font-style:italic;font-size:12px}
+.bfoot{display:flex;align-items:center;gap:6px;padding:0 2px}
+.mgrp.mine .bfoot{flex-direction:row-reverse}
+.mtime{font-size:10px;color:var(--t3)}
+.typing{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;color:var(--t2);animation:fadeIn .2s ease}
+.dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--t2);animation:bonce .9s infinite;margin:0 1px}
+.dots span:nth-child(2){animation-delay:.15s} .dots span:nth-child(3){animation-delay:.3s}
+@keyframes bonce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.ch-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--t3)}
+.ch-empty h3{font-family:'Syne',sans-serif;font-size:18px;color:var(--t2)}
+.inp-area{padding:12px 16px;border-top:1px solid var(--bd);display:flex;align-items:flex-end;gap:9px;background:var(--s1)}
+.inp-wrap{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:9px 14px;transition:.2s}
+.inp-wrap:focus-within{border-color:var(--blue)}
+.chat-inp{width:100%;background:none;border:none;outline:none;color:var(--tx);font-family:inherit;font-size:14px;resize:none;max-height:120px;line-height:1.4}
+.chat-inp::placeholder{color:var(--t3)}
+.send-btn{width:40px;height:40px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:.15s;flex-shrink:0}
+.send-btn:hover{background:var(--blue2);transform:scale(1.05)} .send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ADMIN */
+.adm-main{flex:1;overflow-y:auto;padding:28px 28px;background:var(--bg)}
+.adm-h1{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4px}
+.adm-sub{color:var(--t2);font-size:13px;margin-bottom:20px}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.sc{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px}
+.sl{font-size:10.5px;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.sv{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-top:4px}
+.c-blue{color:var(--blue)} .c-green{color:var(--green)} .c-amber{color:var(--amber)} .c-red{color:var(--red)} .c-purple{color:var(--purple)}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:20px}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;flex:1}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);border-bottom:1px solid var(--bd)}
+td{padding:11px 16px;border-bottom:1px solid rgba(42,45,74,.4);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none} tr:hover td{background:rgba(22,24,34,.6)}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.b-active{background:rgba(62,207,142,.12);color:var(--green)}
+.b-suspended{background:rgba(240,168,50,.12);color:var(--amber)}
+.b-banned{background:rgba(240,92,92,.12);color:var(--red)}
+.b-user{background:rgba(91,141,238,.1);color:var(--blue)}
+.b-admin{background:rgba(155,109,255,.12);color:var(--purple)}
+.b-superadmin{background:rgba(155,109,255,.18);color:var(--purple)}
+.b-pending{background:rgba(139,144,184,.1);color:var(--t2)}
+.b-accepted{background:rgba(62,207,142,.12);color:var(--green)}
+.b-unverified{background:rgba(240,168,50,.1);color:var(--amber)}
+.b-verified{background:rgba(62,207,142,.1);color:var(--green)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:100;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--s1);border:1px solid var(--bd);border-radius:18px;padding:26px 28px;width:100%;max-width:430px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.5);animation:fadeUp .2s ease}
+.modal.lg{max-width:660px}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.mt{font-family:'Syne',sans-serif;font-size:19px;font-weight:700}
+.mc{background:none;border:none;cursor:pointer;color:var(--t2);padding:4px;border-radius:var(--rs);line-height:1;transition:.15s}
+.mc:hover{background:var(--s2);color:var(--tx)}
+.info-box{background:rgba(91,141,238,.07);border:1px solid rgba(91,141,238,.2);border-radius:var(--rs);padding:10px 13px;font-size:12px;color:var(--t2);display:flex;gap:8px;align-items:flex-start;margin-top:14px}
+.info-box svg{flex-shrink:0;margin-top:1px;color:var(--blue)}
+.warn-box{background:rgba(240,92,92,.07);border:1px solid rgba(240,92,92,.2);border-radius:var(--rs);padding:12px 14px;font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.5}
+
+/* TOAST */
+#toasts{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:7px;z-index:999}
+.toast{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:11px 16px;font-size:13px;display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.3);animation:slR .22s ease;min-width:250px}
+@keyframes slR{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:translateX(0)}}
+.toast.success .ti{color:var(--green)} .toast.error .ti{color:var(--red)} .toast.info .ti{color:var(--blue)} .toast.warn .ti{color:var(--amber)}
+
+/* WS badge */
+.ws-badge{position:fixed;top:12px;right:12px;z-index:200;background:var(--s2);border:1px solid var(--bd);border-radius:99px;padding:5px 12px;font-size:11px;display:flex;align-items:center;gap:6px}
+.wsd{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.wsd.off{background:var(--red);animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* misc */
+.empty{padding:30px;text-align:center;color:var(--t3);font-size:13px}
+.ph{display:flex;align-items:center;gap:16px;margin-bottom:22px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:18px;height:18px;border:2px solid var(--bd);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.adm-nav{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH PAGE ── -->
+<div id="pg-auth" class="page active">
+  <div class="auth-box">
+    <div class="auth-card" id="auth-card">
+      <div class="auth-logo">Nex<span>Talk</span></div>
+      <div class="auth-tagline">Secure real-time messaging</div>
+
+      <div class="tabs" id="auth-tabs">
+        <button class="tab on" onclick="showAuthTab('login')">Sign In</button>
+        <button class="tab" onclick="showAuthTab('register')">Register</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="form-login">
+        <div id="login-banner" style="display:none"></div>
+        <div class="fg">
+          <label class="fl">Email</label>
+          <input id="l-email" type="email" class="fi" placeholder="your@email.com"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Password</label>
+          <div class="pw-wrap">
+            <input id="l-pass" type="password" class="fi" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+            <button class="pw-eye" type="button" onclick="togglePw('l-pass',this)">👁</button>
+          </div>
+        </div>
+        <div id="l-err" class="fe" style="display:none;margin-bottom:10px"></div>
+        <button id="l-btn" class="btn btn-primary btn-full" onclick="doLogin()">Sign In →</button>
+        <div class="divider">or</div>
+        <button class="btn btn-ghost btn-full" style="font-size:13px" onclick="showForgot()">Forgot password?</button>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="form-register" style="display:none">
+        <div class="fg">
+          <label class="fl">Full Name</label>
+          <input id="r-name" type="text" class="fi" placeholder="Your full name"/>
+          <div id="e-name" class="fe"></div>
+        </div>
+        <div class="fg">
+          <label class="fl">Email</label>
+          <input id="r-email" type="email" class="fi" placeholder="your@email.com"/>
+          <div id="e-email" class="fe"></div>
+        </div>
+        <div class="fg">
+          <label class="fl">Password</label>
+          <div class="pw-wrap">
+            <input id="r-pass" type="password" class="fi" placeholder="Min 8 chars, 1 uppercase, 1 number"/>
+            <button class="pw-eye" type="button" onclick="togglePw('r-pass',this)">👁</button>
+          </div>
+          <div id="e-pass" class="fe"></div>
+        </div>
+        <div class="fg">
+          <label class="fl">Confirm Password</label>
+          <div class="pw-wrap">
+            <input id="r-conf" type="password" class="fi" placeholder="Repeat password" onkeydown="if(event.key==='Enter')doRegister()"/>
+            <button class="pw-eye" type="button" onclick="togglePw('r-conf',this)">👁</button>
+          </div>
+          <div id="e-conf" class="fe"></div>
+        </div>
+        <button id="r-btn" class="btn btn-primary btn-full" onclick="doRegister()">Create Account →</button>
+      </div>
+
+      <!-- FORGOT -->
+      <div id="form-forgot" style="display:none">
+        <p style="color:var(--t2);font-size:13px;margin-bottom:18px">Enter your email and we'll send you a reset link.</p>
+        <div class="fg">
+          <label class="fl">Email</label>
+          <input id="fg-email" type="email" class="fi" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doForgot()"/>
+        </div>
+        <div id="fg-msg" class="fe" style="display:none;margin-bottom:10px"></div>
+        <button class="btn btn-primary btn-full" onclick="doForgot()">Send Reset Link →</button>
+        <div class="divider"></div>
+        <button class="btn btn-ghost btn-full" style="font-size:13px" onclick="showAuthTab('login')">← Back to Sign In</button>
+      </div>
+
+      <!-- VERIFY PENDING -->
+      <div id="form-verify" style="display:none">
+        <div id="verify-content"></div>
+        <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="doResendVerify()">Resend Verification Email</button>
+        <div class="divider"></div>
+        <button class="btn btn-ghost btn-full" style="font-size:13px" onclick="showAuthTab('login')">← Back to Sign In</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CHAT APP ── -->
+<div id="pg-chat" class="page">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <div class="logo">Nex<span>Talk</span></div>
+      <div class="sb-actions" id="sb-actions"></div>
+    </div>
+    <div class="sb-search"><input class="sbox" id="search" placeholder="Search contacts…" oninput="renderContacts()"/></div>
+    <div class="sec" id="sec-label">Contacts</div>
+    <div class="cl" id="contact-list"></div>
+    <div class="sb-foot">
+      <div id="me-av" class="av sm"></div>
+      <div style="flex:1;min-width:0">
+        <div class="sb-foot-name" id="me-name"></div>
+        <div class="sb-foot-status">● Online</div>
+      </div>
+      <button class="ic" title="Profile" onclick="openModal('profile')">⚙</button>
+      <button class="ic red" title="Logout" onclick="doLogout()">⏻</button>
+    </div>
+  </div>
+  <!-- Main area -->
+  <div id="main-area" style="flex:1;display:flex;flex-direction:column;min-width:0"></div>
+</div>
+
+<!-- Modal host -->
+<div id="modal-host"></div>
+<!-- Toasts -->
+<div id="toasts"></div>
+<!-- WS Status -->
+<div class="ws-badge" id="ws-badge">
+  <div class="wsd" id="wsd"></div><span id="wsl">Connecting…</span>
+</div>
+
+<script>
+'use strict';
+// ════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════
+const S = {
+  me: null, token: null,
+  users: [], onlineIds: new Set(),
+  messages: {}, unread: {},
+  activeChat: null,
+  typingMap: {},
+  ws: null, wsReady: false,
+  modal: null, modalData: null,
+  adminTab: 'users',
+  invitations: [],
+  pendingVerifyEmail: null,
+  pendingVerifyLink: null,
+};
+
+// ════════════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════════════
+const AVCOLS=['#5b8dee','#9b6dff','#3ecf8e','#f0a832','#f05c5c','#20c0c8','#e06ca0','#ff8c42'];
+const avi = n => (n||'?').split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+const avc = n => AVCOLS[(n||'?').charCodeAt(0)%AVCOLS.length];
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmtT = ts => new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+const fmtD = ts => {
+  const d=new Date(ts),t=new Date();
+  if(d.toDateString()===t.toDateString()) return 'Today';
+  const y=new Date(t); y.setDate(t.getDate()-1);
+  if(d.toDateString()===y.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});
+};
+const fmtDT = ts => ts ? new Date(ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+
+let _tid=0;
+function toast(msg,type='info',dur=3500){
+  const id=++_tid, icons={success:'✓',error:'✗',info:'ℹ',warn:'⚠'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span class="ti">${icons[type]||'ℹ'}</span><span>${esc(msg)}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{el.style.cssText='opacity:0;transform:translateX(10px);transition:.2s';setTimeout(()=>el.remove(),200);},dur);
+}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function togglePw(id,btn){
+  const i=document.getElementById(id);
+  i.type=i.type==='password'?'text':'password';
+  btn.textContent=i.type==='password'?'👁':'🙈';
+}
+function setBtn(id,loading,text){
+  const b=document.getElementById(id);
+  if(!b)return;
+  b.disabled=loading;
+  b.innerHTML=loading?`<div class="spinner"></div>${text||'Loading…'}`:text;
+}
+
+// ════════════════════════════════════════════════════════
+//  AUTH TAB SWITCHING
+// ════════════════════════════════════════════════════════
+function showAuthTab(tab){
+  const tabs=['login','register','forgot','verify'];
+  tabs.forEach(t=>{
+    const el=document.getElementById('form-'+t);
+    if(el) el.style.display=t===tab?'':'none';
+  });
+  const tabBtns=document.querySelectorAll('#auth-tabs .tab');
+  const tabsVisible=tab==='login'||tab==='register';
+  document.getElementById('auth-tabs').style.display=tabsVisible?'':'none';
+  if(tabsVisible){
+    tabBtns[0].className='tab'+(tab==='login'?' on':'');
+    tabBtns[1].className='tab'+(tab==='register'?' on':'');
+  }
+  ['l-err'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='none';}});
+  const banner=document.getElementById('login-banner');
+  if(banner) banner.style.display='none';
+}
+function showForgot(){
+  document.getElementById('auth-tabs').style.display='none';
+  ['login','register','verify'].forEach(t=>{const e=document.getElementById('form-'+t);if(e)e.style.display='none';});
+  document.getElementById('form-forgot').style.display='';
+}
+
+// ════════════════════════════════════════════════════════
+//  AUTH ACTIONS
+// ════════════════════════════════════════════════════════
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  const errEl=document.getElementById('l-err');
+  errEl.style.display='none';
+  if(!email||!pass){errEl.textContent='Please enter email and password.';errEl.style.display='block';return;}
+  setBtn('l-btn',true,'Signing in…');
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
+    const d=await r.json();
+    if(!r.ok){
+      if(d.code==='email_unverified'){
+        S.pendingVerifyEmail=email;
+        showVerifyPending(email,null,'Login blocked: your email is not verified yet.');
+        return;
+      }
+      errEl.textContent=d.error||'Login failed';errEl.style.display='block';return;
+    }
+    launchApp(d.token,d.user);
+  }catch{errEl.textContent='Cannot reach server. Is it running?';errEl.style.display='block';}
+  finally{setBtn('l-btn',false,'Sign In →');}
+}
+
+async function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  const conf=document.getElementById('r-conf').value;
+  ['name','email','pass','conf'].forEach(k=>{const e=document.getElementById('e-'+k);if(e)e.textContent='';});
+  let ok=true;
+  if(!name){document.getElementById('e-name').textContent='Name is required.';ok=false;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){document.getElementById('e-email').textContent='Invalid email address.';ok=false;}
+  if(pass.length<8||!/[A-Z]/.test(pass)||!/[0-9]/.test(pass)){document.getElementById('e-pass').textContent='Min 8 chars, 1 uppercase, 1 number.';ok=false;}
+  if(pass!==conf){document.getElementById('e-conf').textContent='Passwords do not match.';ok=false;}
+  if(!ok)return;
+  setBtn('r-btn',true,'Creating account…');
+  try{
+    const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pass})});
+    const d=await r.json();
+    if(!r.ok){document.getElementById('e-email').textContent=d.error||'Registration failed.';return;}
+    S.pendingVerifyEmail=email;
+    S.pendingVerifyLink=d.verifyLink||null;
+    showVerifyPending(email,d.verifyLink,'Account created! Verify your email to continue.');
+  }catch{document.getElementById('e-email').textContent='Cannot reach server.';}
+  finally{setBtn('r-btn',false,'Create Account →');}
+}
+
+async function doForgot(){
+  const email=document.getElementById('fg-email').value.trim();
+  const msg=document.getElementById('fg-msg');
+  if(!email){msg.textContent='Enter your email address.';msg.style.display='block';return;}
+  try{
+    const r=await fetch('/api/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const d=await r.json();
+    msg.style.color='var(--green)';msg.textContent=d.message;msg.style.display='block';
+    if(d.resetLink){
+      const box=document.createElement('div');
+      box.style.cssText='margin-top:10px;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:10px;font-size:11px;word-break:break-all';
+      box.innerHTML=`<div style="color:var(--t2);margin-bottom:4px">Reset link (dev mode):</div><a href="${d.resetLink}" style="color:var(--blue)">${d.resetLink}</a>`;
+      document.getElementById('fg-msg').after(box);
+    }
+  }catch{msg.textContent='Cannot reach server.';msg.style.display='block';}
+}
+
+async function doResendVerify(){
+  const email=S.pendingVerifyEmail;
+  if(!email)return;
+  try{
+    const r=await fetch('/api/resend-verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const d=await r.json();
+    if(r.ok){
+      toast('Verification email resent! Check your inbox.','success');
+      if(d.verifyLink) S.pendingVerifyLink=d.verifyLink;
+      showVerifyPending(email,d.verifyLink||S.pendingVerifyLink,'New verification email sent!');
+    } else toast(d.error||'Could not resend.','error');
+  }catch{toast('Server unreachable.','error');}
+}
+
+function showVerifyPending(email,link,notice){
+  document.getElementById('auth-tabs').style.display='none';
+  ['login','register','forgot'].forEach(t=>{const e=document.getElementById('form-'+t);if(e)e.style.display='none';});
+  document.getElementById('form-verify').style.display='';
+  document.getElementById('verify-content').innerHTML=`
+    <div class="verify-banner">
+      <h4>📧 Check Your Inbox</h4>
+      <p>${esc(notice||'A verification link has been sent to:')} <strong style="color:var(--tx)">${esc(email)}</strong></p>
+      <p style="margin-top:6px">Click the link in the email to verify your account before logging in.</p>
+      ${link?`<div style="margin-top:10px;font-size:11px;color:var(--t3)">Dev mode — click link directly:</div>
+        <a class="link" href="${esc(link)}" target="_blank">${esc(link)}</a>`:
+        '<p style="margin-top:6px;font-size:11px;color:var(--t3)">Check the server console for the verification link (dev mode).</p>'}
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  APP LAUNCH
+// ════════════════════════════════════════════════════════
+function launchApp(token,user){
+  S.token=token; S.me=user;
+  showPage('pg-chat');
+  renderSidebarFoot();
+  renderSidebarActions();
+  renderMain();
+  connectWS(token);
+  document.getElementById('ws-badge').style.display='flex';
+}
+
+function doLogout(){
+  if(S.ws){S.ws.onclose=null;S.ws.close();}
+  Object.assign(S,{me:null,token:null,users:[],onlineIds:new Set(),messages:{},unread:{},activeChat:null,typingMap:{},ws:null,wsReady:false,modal:null,modalData:null,invitations:[],pendingVerifyEmail:null,pendingVerifyLink:null});
+  closeModal();
+  showPage('pg-auth');
+  showAuthTab('login');
+  document.getElementById('ws-badge').style.display='none';
+  document.getElementById('wsd').className='wsd off';
+  document.getElementById('wsl').textContent='Offline';
+}
+
+// ════════════════════════════════════════════════════════
+//  WEBSOCKET
+// ════════════════════════════════════════════════════════
+function connectWS(token){
+  const proto=location.protocol==='https:'?'wss':'ws';
+  const ws=new WebSocket(`${proto}://${location.host}`);
+  S.ws=ws;
+  ws.onopen=()=>{ setWS(true); ws.send(JSON.stringify({type:'auth',token})); };
+  ws.onclose=()=>{ setWS(false); setTimeout(()=>{if(S.token)connectWS(S.token);},3000); };
+  ws.onerror=()=>setWS(false);
+  ws.onmessage=e=>{ let m; try{m=JSON.parse(e.data);}catch{return;} handleWS(m); };
+}
+function wsSend(d){ if(S.ws?.readyState===1) S.ws.send(JSON.stringify(d)); }
+function setWS(ok){
+  S.wsReady=ok;
+  document.getElementById('wsd').className='wsd'+(ok?'':' off');
+  document.getElementById('wsl').textContent=ok?'Live':'Reconnecting…';
+}
+
+function handleWS(msg){
+  switch(msg.type){
+    case 'auth_ok':
+      S.me=msg.user;
+      wsSend({type:'get_users'});
+      wsSend({type:'get_invitations'});
+      break;
+    case 'auth_error':
+      if(msg.reason==='unverified'){toast('Please verify your email first.','warn');}
+      else{toast('Session expired. Please login again.','error');doLogout();}
+      break;
+    case 'kicked':
+      toast(msg.reason==='deleted'?'Your account was deleted by admin.':`Account ${msg.reason}. You have been logged out.`,'error',6000);
+      setTimeout(doLogout,2500);
+      break;
+    case 'online_users':
+      S.onlineIds=new Set(msg.users);
+      renderContacts(); updateChatHead(); refreshAdminIfOpen();
+      break;
+    case 'user_online':
+      S.onlineIds.add(msg.userId);
+      renderContacts(); updateChatHead(); refreshAdminIfOpen();
+      break;
+    case 'user_offline':
+      S.onlineIds.delete(msg.userId);
+      renderContacts(); updateChatHead(); refreshAdminIfOpen();
+      break;
+    case 'users':
+      S.users=msg.users; renderContacts(); refreshAdminIfOpen();
+      break;
+    case 'user_updated':{
+      const idx=S.users.findIndex(u=>u.id===msg.user.id);
+      if(idx>=0)S.users[idx]=msg.user; else S.users.push(msg.user);
+      if(S.me?.id===msg.user.id){S.me=msg.user;renderSidebarFoot();}
+      renderContacts(); refreshAdminIfOpen();
+      break;
+    }
+    case 'user_deleted':
+      S.users=S.users.filter(u=>u.id!==msg.userId);
+      if(S.activeChat===msg.userId){S.activeChat=null;renderMain();}
+      renderContacts(); refreshAdminIfOpen();
+      break;
+    case 'message':{
+      const m=msg.message;
+      const other=m.fromId===S.me.id?m.toId:m.fromId;
+      if(!S.messages[other])S.messages[other]=[];
+      if(!S.messages[other].find(x=>x.id===m.id))S.messages[other].push(m);
+      if(S.activeChat!==other&&m.fromId!==S.me.id){
+        S.unread[other]=(S.unread[other]||0)+1;
+        const sender=S.users.find(u=>u.id===other);
+        toast(`New message from ${sender?.name||'Someone'}`,'info',2500);
+      }
+      renderContacts();
+      if(S.activeChat===other)renderMessages(true);
+      break;
+    }
+    case 'history':
+      S.messages[msg.otherId]=msg.messages;
+      if(S.activeChat===msg.otherId)renderMessages(true);
+      break;
+    case 'message_deleted':{
+      for(const msgs of Object.values(S.messages)){
+        const m=msgs.find(x=>x.id===msg.messageId);
+        if(m){m.deleted=true;m.text='';break;}
+      }
+      if(S.activeChat)renderMessages(false);
+      break;
+    }
+    case 'conversation_cleared':
+      S.messages[msg.otherId]=[];
+      if(S.activeChat===msg.otherId)renderMessages(false);
+      renderContacts();
+      break;
+    case 'typing':
+      if(S.activeChat===msg.fromId)showTypingInd(msg.fromId,msg.isTyping);
+      break;
+    case 'invitations':
+      S.invitations=msg.invitations; break;
+    case 'invitation_sent':
+      S.invitations.push(msg.invitation); break;
+    case 'profile_updated':
+      S.me=msg.user; renderSidebarFoot(); closeModal(); toast('Profile updated!','success'); break;
+    case 'password_changed':
+      closeModal(); toast('Password changed successfully!','success'); break;
+    case 'admin_action_ok':
+      closeModal(); wsSend({type:'get_users'}); toast('User updated.','success'); break;
+    case 'ok':
+      toast(msg.message,'success'); break;
+    case 'error':
+      toast(msg.message,'error'); break;
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  SIDEBAR
+// ════════════════════════════════════════════════════════
+function renderSidebarFoot(){
+  if(!S.me)return;
+  const av=document.getElementById('me-av');
+  av.style.background=avc(S.me.name); av.textContent=avi(S.me.name);
+  document.getElementById('me-name').textContent=S.me.name;
+}
+
+function renderSidebarActions(){
+  const isAdmin=S.me?.role==='superadmin'||S.me?.role==='admin';
+  document.getElementById('sec-label').textContent=isAdmin?'Navigation':'Contacts';
+  document.getElementById('sb-actions').innerHTML=isAdmin?`
+    <button class="ic" title="Admin Panel" onclick="openAdminView()" id="btn-adm">⊞</button>
+    <button class="ic" title="Chat View" onclick="openChatSwitchBack()" id="btn-chat" style="display:none">💬</button>
+  `:`
+    <button class="ic" title="Invite by Email" onclick="openModal('invite')">✉</button>
+    <button class="ic" title="My Invitations" onclick="openModal('invitations')">📥</button>
+  `;
+}
+
+function renderContacts(){
+  if(!S.me)return;
+  const q=(document.getElementById('search')?.value||'').toLowerCase();
+  const isAdmin=S.me.role==='superadmin'||S.me.role==='admin';
+  let list=isAdmin
+    ?S.users.filter(u=>u.id!==S.me.id)
+    :S.users.filter(u=>u.id!==S.me.id&&u.role!=='superadmin');
+  if(q)list=list.filter(u=>u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q));
+
+  const cl=document.getElementById('contact-list');
+  if(!cl)return;
+  cl.innerHTML=list.length?list.map(u=>{
+    const msgs=(S.messages[u.id]||[]).filter(m=>!m.deleted);
+    const last=msgs[msgs.length-1];
+    const isOn=S.onlineIds.has(u.id);
+    const unr=S.unread[u.id]||0;
+    return `<div class="ci${S.activeChat===u.id?' on':''}" onclick="selectChat('${u.id}')">
+      <div class="av sm" style="background:${avc(u.name)}">${avi(u.name)}${isOn?'<div class="od"></div>':''}</div>
+      <div class="ci-info">
+        <div class="ci-name">${esc(u.name)}</div>
+        <div class="ci-last">${last?(last.fromId===S.me.id?'You: ':'')+esc(last.text):'Say hello…'}</div>
+      </div>
+      <div class="ci-meta">
+        <div class="ci-time">${last?fmtT(last.ts):''}</div>
+        ${unr>0?`<div class="unread">${unr}</div>`:''}
+      </div>
+    </div>`;
+  }).join(''):`<div class="empty">No contacts found</div>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  CHAT
+// ════════════════════════════════════════════════════════
+function selectChat(userId){
+  S.activeChat=userId;
+  S.unread[userId]=0;
+  // Show chat view for admins too
+  document.getElementById('main-area').innerHTML=buildChatArea(userId);
+  bindChatInput();
+  wsSend({type:'get_history',otherId:userId});
+  renderContacts();
+  const cb=document.getElementById('btn-chat');
+  if(cb)cb.style.display='flex';
+}
+
+function openAdminView(){
+  S.activeChat=null;
+  renderAdminMain();
+  const cb=document.getElementById('btn-chat');
+  if(cb)cb.style.display='none';
+}
+function openChatSwitchBack(){
+  if(S.activeChat)selectChat(S.activeChat);
+  else{document.getElementById('main-area').innerHTML=buildChatEmpty();}
+}
+
+function renderMain(){
+  const isAdmin=S.me?.role==='superadmin'||S.me?.role==='admin';
+  if(isAdmin)renderAdminMain();
+  else{document.getElementById('main-area').innerHTML=buildChatEmpty();bindChatInput();}
+}
+
+function buildChatEmpty(){
+  return `<div class="ch-empty">
+    <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <h3>Select a conversation</h3>
+    <p style="font-size:13px">Pick a contact from the sidebar to start chatting</p>
+  </div>`;
+}
+
+function buildChatArea(userId){
+  const u=S.users.find(x=>x.id===userId);
+  if(!u)return buildChatEmpty();
+  const isOn=S.onlineIds.has(userId);
+  return `<div class="chat-main" style="display:flex;flex-direction:column;height:100%">
+    <div class="ch-head">
+      <div class="av" style="background:${avc(u.name)}">${avi(u.name)}${isOn?'<div class="od"></div>':''}</div>
+      <div style="flex:1">
+        <div class="ch-name">${esc(u.name)}</div>
+        <div class="ch-status${isOn?' on':''}" id="ch-status">${isOn?'● Online':'○ Offline'}</div>
+      </div>
+      <button class="ic red" title="Delete chat history" onclick="openModal('deleteChat','${userId}')">🗑</button>
+    </div>
+    <div class="msgs" id="msgs">${buildMsgHtml(userId)}<div id="msg-end"></div></div>
+    <div class="inp-area">
+      <div class="inp-wrap">
+        <textarea id="chat-inp" class="chat-inp" placeholder="Message ${esc(u.name)}…" rows="1"></textarea>
+      </div>
+      <button class="send-btn" onclick="sendMsg()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>`;
+}
+
+function buildMsgHtml(userId){
+  const raw=(S.messages[userId]||[]);
+  const msgs=raw.filter(m=>!m.deleted);
+  if(!msgs.length)return`<div style="text-align:center;color:var(--t3);font-size:13px;padding:24px">No messages yet. Say hello! 👋</div>`;
+  let html='',lastDate='',i=0;
+  while(i<msgs.length){
+    const m=msgs[i],d=fmtD(m.ts);
+    if(d!==lastDate){html+=`<div class="dsep">${d}</div>`;lastDate=d;}
+    const mine=m.fromId===S.me.id;
+    html+=`<div class="mgrp ${mine?'mine':'theirs'}">`;
+    if(!mine){const s=S.users.find(u=>u.id===m.fromId);html+=`<div class="msender">${esc(s?.name||'')}</div>`;}
+    let j=i;
+    while(j<msgs.length&&msgs[j].fromId===m.fromId&&fmtD(msgs[j].ts)===d){
+      const cm=msgs[j];
+      html+=`<div class="mrow"><div class="bbl${cm.deleted?' del':''}" oncontextmenu="msgCtx(event,'${cm.id}','${mine}')">${cm.deleted?'🚫 Deleted':esc(cm.text)}</div></div>`;
+      j++;
+    }
+    html+=`<div class="bfoot"><div class="mtime">${fmtT(msgs[j-1].ts)}</div></div></div>`;
+    i=j;
+  }
+  return html;
+}
+
+function renderMessages(scrollBottom){
+  const el=document.getElementById('msgs');
+  if(!el||!S.activeChat)return;
+  const atBot=el.scrollHeight-el.scrollTop-el.clientHeight<80;
+  el.innerHTML=buildMsgHtml(S.activeChat)+'<div id="msg-end"></div>';
+  if(scrollBottom||atBot)document.getElementById('msg-end')?.scrollIntoView({behavior:'smooth'});
+}
+
+function updateChatHead(){
+  if(!S.activeChat)return;
+  const el=document.getElementById('ch-status');
+  if(!el)return;
+  const on=S.onlineIds.has(S.activeChat);
+  el.className='ch-status'+(on?' on':'');
+  el.textContent=on?'● Online':'○ Offline';
+}
+
+let _typTimer=null;
+function bindChatInput(){
+  const inp=document.getElementById('chat-inp');
+  if(!inp)return;
+  setTimeout(()=>inp.focus(),50);
+  inp.addEventListener('input',()=>{
+    inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,120)+'px';
+    if(S.activeChat){
+      wsSend({type:'typing',toId:S.activeChat,isTyping:true});
+      clearTimeout(_typTimer);
+      _typTimer=setTimeout(()=>wsSend({type:'typing',toId:S.activeChat,isTyping:false}),1500);
+    }
+  });
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
+}
+
+function sendMsg(){
+  const inp=document.getElementById('chat-inp');
+  const text=inp?.value.trim();
+  if(!text||!S.activeChat)return;
+  wsSend({type:'send_message',toId:S.activeChat,text});
+  inp.value='';inp.style.height='auto';
+  wsSend({type:'typing',toId:S.activeChat,isTyping:false});
+}
+
+function showTypingInd(fromId,on){
+  const existing=document.getElementById('typing-row');
+  if(on){
+    if(!existing){
+      const msgs=document.getElementById('msgs');
+      if(!msgs)return;
+      const el=document.createElement('div');
+      el.id='typing-row'; el.className='typing';
+      const name=S.users.find(u=>u.id===fromId)?.name||'';
+      el.innerHTML=`<span style="font-size:12px;color:var(--t2)">${esc(name)} is typing</span><div class="dots"><span></span><span></span><span></span></div>`;
+      msgs.insertBefore(el,document.getElementById('msg-end'));
+      document.getElementById('msg-end')?.scrollIntoView({behavior:'smooth'});
+    }
+    clearTimeout(S.typingMap[fromId]);
+    S.typingMap[fromId]=setTimeout(()=>showTypingInd(fromId,false),3000);
+  } else existing?.remove();
+}
+
+function msgCtx(e,msgId,mine){
+  e.preventDefault();
+  if(mine!==true&&mine!=='true')return;
+  if(confirm('Delete this message for everyone?'))
+    wsSend({type:'delete_message',messageId:msgId,otherId:S.activeChat});
+}
+
+// ════════════════════════════════════════════════════════
+//  ADMIN
+// ════════════════════════════════════════════════════════
+function renderAdminMain(){
+  document.getElementById('main-area').innerHTML=`<div class="adm-main" id="adm-content">${buildAdmin()}</div>`;
+}
+function refreshAdminIfOpen(){
+  const el=document.getElementById('adm-content');
+  if(el)el.innerHTML=buildAdmin();
+}
+
+function buildAdmin(){
+  const tab=S.adminTab;
+  const total=S.users.length;
+  const active=S.users.filter(u=>u.status==='active').length;
+  const suspended=S.users.filter(u=>u.status==='suspended').length;
+  const banned=S.users.filter(u=>u.status==='banned').length;
+  const unverified=S.users.filter(u=>!u.emailVerified).length;
+  const online=S.onlineIds.size;
+
+  if(tab==='invitations'){
+    return `<div class="adm-h1">Invitations</div>
+    <div class="adm-sub">All platform invitations sent by users</div>
+    <div class="adm-nav">
+      <button class="btn btn-ghost btn-sm" onclick="S.adminTab='users';refreshAdminIfOpen()">← Users</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('invite')">✉ Send Invite</button>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">All Invitations</div><span style="color:var(--t2);font-size:12px">${S.invitations.length} total</span></div>
+      <table><thead><tr><th>Email</th><th>Invited By</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>${S.invitations.length?S.invitations.map(inv=>{
+        const from=S.users.find(u=>u.id===inv.fromId);
+        return`<tr><td>${esc(inv.toEmail)}</td><td>${esc(from?.name||'—')}</td>
+          <td><span class="badge b-${inv.status==='accepted'?'accepted':'pending'}">${inv.status}</span></td>
+          <td style="color:var(--t2)">${inv.createdAt?.slice(0,10)||'—'}</td></tr>`;
+      }).join(''):'<tr><td colspan="4" class="empty">No invitations yet</td></tr>'}</tbody></table>
+    </div>`;
+  }
+
+  return `<div class="adm-h1">User Management</div>
+  <div class="adm-sub">Manage accounts, roles, and access. Chat messages are <strong style="color:var(--tx)">strictly private</strong> and inaccessible.</div>
+  <div class="adm-nav">
+    <button class="btn btn-secondary btn-sm" onclick="wsSend({type:'get_users'})">↻ Refresh</button>
+    <button class="btn btn-secondary btn-sm" onclick="S.adminTab='invitations';refreshAdminIfOpen()">✉ Invitations</button>
+  </div>
+  <div class="sg">
+    <div class="sc"><div class="sl">Total Users</div><div class="sv c-blue">${total}</div></div>
+    <div class="sc"><div class="sl">Online Now</div><div class="sv c-green">${online}</div></div>
+    <div class="sc"><div class="sl">Suspended</div><div class="sv c-amber">${suspended}</div></div>
+    <div class="sc"><div class="sl">Banned</div><div class="sv c-red">${banned}</div></div>
+  </div>
+  ${unverified>0?`<div style="background:rgba(240,168,50,.08);border:1px solid rgba(240,168,50,.2);border-radius:var(--rs);padding:10px 14px;font-size:12.5px;color:var(--amber);margin-bottom:16px">
+    ⚠ <strong>${unverified}</strong> user${unverified>1?'s':''} with unverified email${unverified>1?'s':''}</div>`:''}
+  <div class="info-box" style="margin-bottom:18px">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <span><strong>Privacy Enforced:</strong> Admin access cannot read any user's private chat messages. Chat data is server-protected.</span>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">All Users</div><span style="color:var(--t2);font-size:12px">${total} registered</span></div>
+    <table>
+      <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Email</th><th>Status</th><th>Last Seen</th><th>Actions</th></tr></thead>
+      <tbody>${S.users.map(u=>`<tr>
+        <td><div style="display:flex;align-items:center;gap:9px">
+          <div class="av sm" style="background:${avc(u.name)}">${avi(u.name)}</div>
+          <div>
+            <div style="font-weight:600">${esc(u.name)}</div>
+            <div style="font-size:10.5px;color:${S.onlineIds.has(u.id)?'var(--green)':'var(--t3)'}">${S.onlineIds.has(u.id)?'● Online':'Offline'}</div>
+          </div>
+        </div></td>
+        <td style="color:var(--t2);font-size:12px">${esc(u.email)}</td>
+        <td><span class="badge b-${u.role}">${u.role}</span></td>
+        <td><span class="badge b-${u.emailVerified?'verified':'unverified'}">${u.emailVerified?'✓ Verified':'✗ Unverified'}</span></td>
+        <td><span class="badge b-${u.status}">${u.status}</span></td>
+        <td style="color:var(--t3);font-size:11.5px">${fmtDT(u.lastSeen)}</td>
+        <td>${u.id!==S.me?.id?`
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="openModal('adminUser','${u.id}')">Edit</button>
+            ${u.emailVerified?'':`<button class="btn btn-sm" style="background:rgba(240,168,50,.1);color:var(--amber)" onclick="adminResendVerify('${u.id}')">Resend</button>`}
+            ${u.status!=='banned'
+              ?`<button class="btn btn-sm" style="background:rgba(240,92,92,.1);color:var(--red)" onclick="openModal('confirmBan','${u.id}')">Ban</button>`
+              :`<button class="btn btn-success btn-sm" onclick="adminUnban('${u.id}')">Unban</button>`}
+            ${S.me?.role==='superadmin'?`<button class="btn btn-sm" style="background:rgba(240,92,92,.15);color:var(--red);border:1px solid rgba(240,92,92,.3)" onclick="openModal('confirmDelete','${u.id}')">Delete</button>`:''}
+          </div>`:'<span style="color:var(--t3);font-size:11px">You</span>'}
+        </td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function adminUnban(id){ wsSend({type:'admin_update_user',userId:id,status:'active'}); toast('User unbanned.','success'); }
+function adminResendVerify(id){ wsSend({type:'admin_resend_verify',userId:id}); }
+
+// ════════════════════════════════════════════════════════
+//  MODALS
+// ════════════════════════════════════════════════════════
+function openModal(name,data){
+  S.modal=name; S.modalData=data||null; renderModal();
+}
+function closeModal(){
+  S.modal=null; S.modalData=null;
+  document.getElementById('modal-host').innerHTML='';
+}
+
+function renderModal(){
+  if(!S.modal)return;
+  const{modal:name,modalData:data,me}=S;
+  let body='';
+
+  if(name==='profile'){
+    body=`<div class="mh"><div class="mt">My Profile</div><button class="mc" onclick="closeModal()">✕</button></div>
+    <div class="ph">
+      <div class="av xl" style="background:${avc(me.name)}">${avi(me.name)}</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700">${esc(me.name)}</div>
+        <div style="color:var(--t2);font-size:12px;margin-top:2px">${esc(me.email)}</div>
+        <div style="display:flex;gap:5px;margin-top:7px">
+          <span class="badge b-${me.role}">${me.role}</span>
+          <span class="badge b-${me.emailVerified?'verified':'unverified'}">${me.emailVerified?'✓ Verified':'Unverified'}</span>
+        </div>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Display Name</label><input id="p-name" class="fi" value="${esc(me.name)}"/></div>
+    <div class="fg"><label class="fl">Bio</label><input id="p-bio" class="fi" value="${esc(me.bio||'')}" placeholder="Tell people about yourself…"/></div>
+    <div class="fg"><label class="fl">Email</label><input class="fi" value="${esc(me.email)}" disabled/><div class="fhint">Email cannot be changed</div></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="openModal('changePassword')">🔒 Change Password</button>
+      <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+    </div>`;
+  }
+
+  else if(name==='changePassword'){
+    body=`<div class="mh"><div class="mt">Change Password</div><button class="mc" onclick="openModal('profile')">✕</button></div>
+    <div class="fg"><label class="fl">Current Password</label><input id="cp-cur" type="password" class="fi" placeholder="Current password"/></div>
+    <div class="fg"><label class="fl">New Password</label><input id="cp-new" type="password" class="fi" placeholder="Min 8 chars, 1 uppercase, 1 number"/></div>
+    <div class="fg"><label class="fl">Confirm New</label><input id="cp-con" type="password" class="fi" placeholder="Repeat new password" onkeydown="if(event.key==='Enter')savePassword()"/></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="openModal('profile')">← Back</button>
+      <button class="btn btn-primary" onclick="savePassword()">Update Password</button>
+    </div>`;
+  }
+
+  else if(name==='invite'){
+    body=`<div class="mh"><div class="mt">Send Invitation</div><button class="mc" onclick="closeModal()">✕</button></div>
+    <p style="color:var(--t2);font-size:13px;margin-bottom:18px">Invite someone to join NexTalk by their email address. They'll receive a link to register.</p>
+    <div class="fg"><label class="fl">Email Address</label><input id="inv-em" type="email" class="fi" placeholder="friend@example.com" onkeydown="if(event.key==='Enter')sendInvite()"/></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="sendInvite()">✉ Send Invitation</button>
+    </div>`;
+  }
+
+  else if(name==='invitations'){
+    const mine=S.invitations.filter(i=>i.fromId===me.id);
+    body=`<div class="mh"><div class="mt">My Invitations</div><button class="mc" onclick="closeModal()">✕</button></div>
+    ${mine.length?mine.map(inv=>`<div style="display:flex;align-items:center;gap:10px;background:var(--s2);border-radius:var(--rs);padding:11px 12px;margin-bottom:7px">
+      <div style="flex:1"><div style="font-weight:600;font-size:13px">${esc(inv.toEmail)}</div><div style="font-size:11px;color:var(--t2)">Sent ${inv.createdAt?.slice(0,10)}</div></div>
+      <span class="badge b-${inv.status==='accepted'?'accepted':'pending'}">${inv.status}</span>
+    </div>`).join(''):'<div class="empty" style="padding:24px 0">No invitations sent yet</div>'}
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+      <button class="btn btn-primary" onclick="openModal('invite')">New Invitation</button>
+    </div>`;
+  }
+
+  else if(name==='deleteChat'){
+    const u=S.users.find(x=>x.id===data);
+    body=`<div class="mh"><div class="mt">Delete Chat History</div><button class="mc" onclick="closeModal()">✕</button></div>
+    <div class="warn-box">Are you sure you want to delete all messages with <strong style="color:var(--tx)">${esc(u?.name||'')}</strong>? This cannot be undone.</div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="doDeleteChat('${data}')">🗑 Delete All Messages</button>
+    </div>`;
+  }
+
+  else if(name==='adminUser'){
+    const u=S.users.find(x=>x.id===data);
+    if(!u){closeModal();return;}
+    const isSA=me.role==='superadmin';
+    body=`<div class="mh"><div class="mt">Edit User</div><button class="mc" onclick="closeModal()">✕</button></div>
+    <div class="ph">
+      <div class="av lg" style="background:${avc(u.name)}">${avi(u.name)}</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">${esc(u.name)}</div>
+        <div style="color:var(--t2);font-size:12px">${esc(u.email)}</div>
+        <div style="display:flex;gap:5px;margin-top:6px">
+          <span class="badge b-${u.role}">${u.role}</span>
+          <span class="badge b-${u.emailVerified?'verified':'unverified'}">${u.emailVerified?'Verified':'Unverified'}</span>
+        </div>
+      </div>
+    </div>
+    ${isSA?`<div class="fg"><label class="fl">Role</label><select id="au-role" class="fi">
+      ${['user','admin','superadmin'].map(r=>`<option value="${r}"${u.role===r?' selected':''}>${r}</option>`).join('')}
+    </select></div>`:''}
+    <div class="fg"><label class="fl">Account Status</label><select id="au-status" class="fi">
+      ${['active','suspended','banned'].map(s=>`<option value="${s}"${u.status===s?' selected':''}>${s}</option>`).join('')}
+    </select></div>
+    ${isSA?`<div class="fg"><label class="fl">Email Verification</label><select id="au-verified" class="fi">
+      <option value="true"${u.emailVerified?' selected':''}>✓ Verified</option>
+      <option value="false"${!u.emailVerified?' selected':''}>✗ Not Verified</option>
+    </select></div>`:''}
+    <div class="info-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Chat messages are private and cannot be accessed here.</span></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAdminUser('${u.id}',${isSA})">Save Changes</button>
+    </div>`;
+  }
+
+  else if(name==='confirmBan'){
+    const u=S.users.find(x=>x.id===data);
+    body=`<div class="mh"><div class="mt">Ban User</div><button class="mc" onclick="closeModal()">✕</button></div>
+    <div class="warn-box">Are you sure you want to ban <strong style="color:var(--tx)">${esc(u?.name||'')}</strong>? They will immediately be disconnected and unable to log in.</div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="wsSend({type:'admin_update_user',userId:'${data}',status:'banned'});closeModal()">Ban User</button>
+    </div>`;
+  }
+
+  else if(name==='confirmDelete'){
+    const u=S.users.find(x=>x.id===data);
+    body=`<div class="mh"><div class="mt">Delete User</div><button class="mc" onclick="closeModal()">✕</button></div>
+    <div class="warn-box" style="border-color:rgba(240,92,92,.4)">
+      ⚠️ <strong>Permanently delete ${esc(u?.name||'')}?</strong><br><br>
+      This will <strong>permanently remove</strong>:
+      <ul style="margin:10px 0 0 16px;line-height:1.8;font-size:13px">
+        <li>Their account and profile</li>
+        <li>All their messages and conversations</li>
+        <li>All their invitations</li>
+      </ul>
+      <br>This action <strong>cannot be undone</strong>.
+    </div>
+    <div class="fg"><label class="fl">Type DELETE to confirm</label><input id="del-confirm" class="fi" placeholder="DELETE"/></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete('${data}')">🗑 Permanently Delete</button>
+    </div>`;
+  }
+
+  document.getElementById('modal-host').innerHTML=`<div class="overlay" onclick="handleOvl(event)"><div class="modal">${body}</div></div>`;
+}
+
+function handleOvl(e){ if(e.target.classList.contains('overlay'))closeModal(); }
+
+// ════════════════════════════════════════════════════════
+//  MODAL ACTIONS
+// ════════════════════════════════════════════════════════
+function saveProfile(){
+  const name=document.getElementById('p-name')?.value;
+  const bio=document.getElementById('p-bio')?.value;
+  if(!name?.trim()){toast('Name cannot be empty','error');return;}
+  wsSend({type:'update_profile',name,bio});
+}
+function savePassword(){
+  const cur=document.getElementById('cp-cur')?.value;
+  const nxt=document.getElementById('cp-new')?.value;
+  const con=document.getElementById('cp-con')?.value;
+  if(!cur){toast('Enter current password','error');return;}
+  if(nxt!==con){toast('Passwords do not match','error');return;}
+  wsSend({type:'change_password',current:cur,newPass:nxt,confirmPass:con});
+}
+function sendInvite(){
+  const email=document.getElementById('inv-em')?.value;
+  wsSend({type:'send_invitation',email});
+  closeModal();
+}
+function doDeleteChat(userId){
+  wsSend({type:'delete_conversation',otherId:userId});
+  closeModal(); toast('Chat history deleted','success');
+}
+function saveAdminUser(uid,isSA){
+  const status=document.getElementById('au-status')?.value;
+  const role=isSA?document.getElementById('au-role')?.value:undefined;
+  const verified=isSA?document.getElementById('au-verified')?.value:undefined;
+  wsSend({type:'admin_update_user',userId:uid,status,...(role?{role}:{}),...(verified!==undefined?{emailVerified:verified==='true'}:{})});
+}
+function confirmDelete(uid){
+  const inp=document.getElementById('del-confirm');
+  if(inp?.value!=='DELETE'){toast('Type DELETE to confirm','error');return;}
+  wsSend({type:'admin_delete_user',userId:uid});
+  closeModal();
+  toast('User permanently deleted.','success');
+}
+
+// Check URL for register ref
+(function checkURLParams(){
+  const params=new URLSearchParams(location.search);
+  if(params.get('ref')){ showAuthTab('register'); }
+})();
+</script>
+</body>
+</html>
